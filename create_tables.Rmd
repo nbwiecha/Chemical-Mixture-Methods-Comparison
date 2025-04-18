@@ -1,0 +1,886 @@
+---
+title: "PFAS Methods Comparison Tables"
+author: "Nate Wiecha"
+date: "2024-01-12"
+output: pdf_document
+---
+```{r}
+library(tidyverse)
+library(kableExtra)
+```
+
+Load data:
+```{r}
+load("outputs//HPC//linear_sims_p10_n100_mcmc20000.Rdata")
+
+out.rho0.linear.p10.n100 <- out.rho0.linear
+out.rho5.linear.p10.n100 <- out.rho5.linear
+out.rho9.linear.p10.n100 <- out.rho9.linear
+
+rm(out.rho0.linear, out.rho5.linear, out.rho9.linear)
+load("outputs//HPC//nonlinear_sims_p10_n100_mcmc20000.Rdata")
+
+
+out.rho0.nonlinear.p10.n100 <- out.rho0.nonlinear
+out.rho5.nonlinear.p10.n100 <- out.rho5.nonlinear
+out.rho9.nonlinear.p10.n100 <- out.rho9.nonlinear
+
+rm(out.rho0.nonlinear, out.rho5.nonlinear, out.rho9.nonlinear)
+
+load("outputs//HPC//interactive_sims_p10_n100_mcmc20000.Rdata")
+
+
+out.rho0.interactive.p10.n100 <- out.rho0.interactive
+out.rho5.interactive.p10.n100 <- out.rho5.interactive
+out.rho9.interactive.p10.n100 <- out.rho9.interactive
+
+rm(out.rho0.interactive, out.rho5.interactive, out.rho9.interactive)
+
+load("outputs//HPC//opposite_sims_p10_mcmc20000.Rdata")
+out.rho5.opposite.p10.n100 <- out.rho5.opposite
+rm(out.rho5.opposite)
+
+load("outputs//HPC//linear_sims_p5_n100_mcmc20000.Rdata")
+
+out.rho0.linear.p5.n100 <- out.rho0.linear
+out.rho5.linear.p5.n100 <- out.rho5.linear
+out.rho9.linear.p5.n100 <- out.rho9.linear
+
+rm(out.rho0.linear, out.rho5.linear, out.rho9.linear)
+
+load("outputs//HPC//nonlinear_sims_p5_n100_mcmc20000.Rdata")
+
+
+out.rho0.nonlinear.p5.n100 <- out.rho0.nonlinear
+out.rho5.nonlinear.p5.n100 <- out.rho5.nonlinear
+out.rho9.nonlinear.p5.n100 <- out.rho9.nonlinear
+
+rm(out.rho0.nonlinear, out.rho5.nonlinear, out.rho9.nonlinear)
+
+
+load("outputs//HPC//interactive_sims_p5_n100_mcmc20000.Rdata")
+
+
+out.rho0.interactive.p5.n100 <- out.rho0.interactive
+out.rho5.interactive.p5.n100 <- out.rho5.interactive
+out.rho9.interactive.p5.n100 <- out.rho9.interactive
+
+rm(out.rho0.interactive, out.rho5.interactive, out.rho9.interactive)
+
+# n=400
+load("outputs//HPC//linear_sims_p5_n400_mcmc20000.Rdata")
+
+out.rho0.linear.p5.n400 <- out.rho0.linear
+out.rho5.linear.p5.n400 <- out.rho5.linear
+
+rm(out.rho0.linear, out.rho5.linear)
+
+load("outputs//HPC//nonlinear_sims_p5_n400_mcmc20000.Rdata")
+
+
+out.rho0.nonlinear.p5.n400 <- out.rho0.nonlinear
+out.rho5.nonlinear.p5.n400 <- out.rho5.nonlinear
+
+rm(out.rho0.nonlinear, out.rho5.nonlinear)
+
+
+load("outputs//HPC//interactive_sims_p5_n400_mcmc20000.Rdata")
+
+
+out.rho0.interactive.p5.n400 <- out.rho0.interactive
+out.rho5.interactive.p5.n400 <- out.rho5.interactive
+
+rm(out.rho0.interactive, out.rho5.interactive)
+
+load("outputs//HPC//sine_sims_p5_n100_mcmc20000.Rdata")
+out.rho0.sin.p5.n100 <- out.rho0.sine
+out.rho5.sin.p5.n100 <- out.rho5.sine
+out.rho9.sin.p5.n100 <- out.rho9.sine
+
+rm(out.rho0.sine, out.rho5.sine, out.rho9.sine)
+
+load("outputs//HPC//sine_sims_p10_n100_mcmc20000.Rdata")
+out.rho0.sin.p10.n100 <- out.rho0.sine
+out.rho5.sin.p10.n100 <- out.rho5.sine
+out.rho9.sin.p10.n100 <- out.rho9.sine
+
+rm(out.rho0.sine, out.rho5.sine, out.rho9.sine)
+
+load("outputs//HPC//sine_sims_p5_n400_mcmc20000.Rdata")
+out.rho0.sin.p5.n400 <- out.rho0.sine
+out.rho5.sin.p5.n400 <- out.rho5.sine
+
+rm(out.rho0.sine, out.rho5.sine)
+# load("outputs//HPC//opposite_sims_p5_mcmc20000.Rdata")
+
+load("outputs//HPC//null_sims_p5_n100_mcmc20000.Rdata")
+out.rho5.null.p5.n100 <- out.rho5.null
+rm(out.rho5.null)
+
+load("outputs//HPC//dense_sims_p10_n100_mcmc20000.Rdata")
+out.rho5.dense.p10.n100 <- out.rho5.dense
+rm(out.rho5.dense)
+
+load("outputs//HPC//dense_sims_p20_n100_mcmc20000.Rdata")
+out.rho5.dense.p20.n100 <- out.rho5.dense
+rm(out.rho5.dense)
+
+```
+
+Creating tables functions:
+```{r include=FALSE}
+
+summ_data <- function(sim_out){
+  # Function to summarize a simulation output dataset
+  # grouping by beta, compute power/size as proportion of MC iterations
+  # where H_0 was rejected
+  sim.summ <- sim_out %>% as.data.frame() %>%
+    # select(-ENET_alpha) %>%
+    rename(beta1=beta) %>%
+    group_by(beta1)  %>%
+    summarize(across(everything(), \(x) mean(x, na.rm=TRUE)))
+  return(sim.summ)
+}
+
+create_tables <- function(linear.output, nonlinear.output, p.sim, rho.sim, n.sim,
+                          interactive.output, sin.output, opposite.output=NULL){
+  
+  ################################################################################
+  #                        Extract data                                          #
+  ################################################################################
+  
+  ########################    Linear scenarios         ###########################
+  
+  vs.linear <- linear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("vs."), -vs.ENET_alpha)
+  
+  idx.linear <- linear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  mse.linear <- linear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("mse"))
+  
+  
+  #######################    Nonlinear scenarios         #########################
+
+  vs.nonlinear <- nonlinear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("vs."), -vs.ENET_alpha)
+  
+  idx.nonlinear <- nonlinear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  mse.nonlinear <- nonlinear.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("mse"))
+  
+  #######################    Interactive scenarios         #########################
+  
+  vs.interactive <- interactive.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("vs."), -vs.ENET_alpha)
+  
+  idx.interactive <- interactive.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  mse.interactive <- interactive.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("mse"))
+  
+  #######################    Sine scenarios         #########################
+  
+  vs.sin <- sin.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("vs."), -vs.ENET_alpha)
+  
+  idx.sin <- sin.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  mse.sin <- sin.output %>%
+    as.data.frame() %>%
+    select(beta, starts_with("mse"))
+  
+  #############################  Opposite scenario      ########################
+  if(!is.null(opposite.output)){
+    idx.opposite <- opposite.output %>%
+      as.data.frame() %>%
+      select(beta, starts_with("idx."), -idx.ENET_alpha)
+    
+    mse.opposite <- opposite.output %>%
+      as.data.frame() %>%
+      select(beta, starts_with("mse"))
+  }else{
+    idx.opposite <- NULL
+    mse.opposite <- NULL
+  }
+  
+  colnames(vs.linear) <- colnames(vs.nonlinear) <-  
+    colnames(vs.interactive) <- colnames(vs.sin) <-
+    c("beta", "GAM (HT)", "GAM (VS)", "BKMR (0.50)", "BKMR (0.95)", "SSGAM (0.50)", "SSGAM (0.95)", 
+      "ENET", "OLS")
+  
+  use.cols.vs <- c("beta", "GAM (HT)", "GAM (VS)", "BKMR (0.50)", "BKMR (0.95)",# "SSGAM (0.50)", #"SSGAM (0.95)", 
+                   "ENET", "OLS")
+  
+  
+  colnames(idx.linear) <- colnames(idx.nonlinear) <-
+    colnames(idx.interactive)<- colnames(idx.sin) <-
+    c("beta", "GAM (HT, bonf.)", "GAM (HT, one term)", "GAM (HT, F)", "GAM (VS)", "BKMR (Contrast)", 
+      "BKMR (Hier., 0.50)", "BKMR (Hier., 0.95)", "SSGAM (0.50)", "SSGAM (0.95)", 
+      "ENET", "PCR", "WQS (Pos.)", "WQS (Neg.)", "QGC", "TEV", "OLS")
+  
+  if(!is.null(opposite.output)){
+    colnames(idx.opposite) <- colnames(idx.interactive)
+  }
+  
+  use.cols <- c("beta", "GAM (HT, bonf.)", "BKMR (Contrast)",  "BKMR (Hier., 0.95)", "OLS", "PCR",
+                "WQS (Pos.)", "QGC")
+  ################################################################################
+  #                                   Tables                                     #
+  ################################################################################
+  
+  ##################
+  #  Var sel.      #
+  ##################
+  
+  # summmarize data
+  summ.vs.lin <- summ_data(vs.linear[,use.cols.vs])
+  summ.vs.nonlinear <- summ_data(vs.nonlinear[,use.cols.vs])
+  summ.vs.interactive <- summ_data(vs.interactive[,use.cols.vs])
+  summ.vs.sin <- summ_data(vs.sin[,use.cols.vs])
+  
+  # # pick rows to make tables of
+  long.summ.vs.lin <- summ.vs.lin[2:nrow(summ.vs.lin),] %>% # to avoid selecting beta=0
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value)
+
+  powerdiffs.lin.vs <- long.summ.vs.lin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.lin.vs <- which.max(powerdiffs.lin.vs$diff) + 1 # bc excluded beta=0
+  
+  long.summ.vs.nonlin <- summ.vs.nonlinear[2:nrow(summ.vs.nonlinear),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value)
+  
+  powerdiffs.nonlin.vs <- long.summ.vs.nonlin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.nonlin.vs <- which.max(powerdiffs.nonlin.vs$diff) + 1
+  
+  long.summ.vs.int <- summ.vs.interactive[2:nrow(summ.vs.interactive),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value)
+  
+  powerdiffs.int.vs <- long.summ.vs.int %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.int.vs <- which.max(powerdiffs.int.vs$diff) + 1
+  
+  long.summ.vs.sin <- summ.vs.sin[2:nrow(summ.vs.sin),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value)
+  
+  powerdiffs.sin.vs <- long.summ.vs.sin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.sin.vs <- which.max(powerdiffs.sin.vs$diff) + 1
+  
+  # vs.rownames <- c("GAM (HT)", "GAM (VS)", "BKMR (0.50)", "BKMR (0.95)", "SSGAM (0.50)",
+  #                  "SSGAM (0.95)", "ENET", "OLS")
+  # Create size row
+  ncol.vs <- ncol(summ.vs.lin)
+  size.vs <- rbind(summ.vs.lin[1,], 
+                            summ.vs.nonlinear[1,],
+                            summ.vs.interactive[1,],
+                            summ.vs.sin[1,]) %>%
+    t() %>%
+    as.data.frame() %>%
+    rowMeans() %>%
+    round(5)
+  # colnames(size.vs) <- c("Linear", "Nonlinear", "Interactive")
+  # rownames(size.vs) <- vs.rownames
+  # size.vs
+  
+  # Create power rows and combine with size row
+  power.vs <- rbind(summ.vs.lin[label.row.lin.vs,],
+                    summ.vs.nonlinear[label.row.nonlin.vs,],
+                    summ.vs.interactive[label.row.int.vs,],
+                    summ.vs.sin[label.row.sin.vs,],
+                    size.vs) %>%
+    t() %>%
+    as.data.frame() %>%
+    round(5)
+  
+  # Combine and format output table
+  colnames(power.vs) <- c("Lin.", "N.L", "Int.", "Sine", "None")
+  rownames(power.vs)[1] <- "beta"#c("beta", vs.rownames)
+  power.vs <- cbind( rep(n.sim, 5), rep(p.sim, 5), rep(rho.sim, 5),  t(power.vs))
+  colnames(power.vs)[1:3] <- c("n", "p", "rho")
+  power.vs
+  
+  #####################################
+  #   Index (whole-mixture) methods   #
+  #####################################
+  
+  # summmarize data
+  summ.index.lin <- summ_data(idx.linear[,use.cols])
+  summ.index.nonlinear <- summ_data(idx.nonlinear[,use.cols])
+  summ.index.interactive <- summ_data(idx.interactive[,use.cols])
+  summ.index.sin <- summ_data(idx.sin[,use.cols])
+  summ.index.opposite <- NULL
+  if(!is.null(opposite.output)){
+    summ.index.opposite <- summ_data(idx.opposite[,use.cols])
+  }
+  
+  # pick rows to make tables of
+  long.summ.idx.lin <- summ.index.lin[2:nrow(summ.index.lin),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+
+  powerdiffs.lin.idx <- long.summ.idx.lin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+
+  label.row.lin.idx <- which.max(powerdiffs.lin.idx$diff) + 1
+
+  long.summ.idx.nonlin <- summ.index.nonlinear[2:nrow(summ.index.nonlinear),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+
+  powerdiffs.nonlin.idx <- long.summ.idx.nonlin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+
+  label.row.nonlin.idx <- which.max(powerdiffs.nonlin.idx$diff) + 1
+
+  long.summ.idx.int <- summ.index.interactive[2:nrow(summ.index.interactive),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+
+  powerdiffs.int.idx <- long.summ.idx.int %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+
+  label.row.int.idx <- which.max(powerdiffs.int.idx$diff) + 1
+  
+  long.summ.idx.sin <- summ.index.sin[2:nrow(summ.index.sin),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.sin.idx <- long.summ.idx.sin %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.sin.idx <- which.max(powerdiffs.sin.idx$diff) + 1
+  
+  # 
+  if(!is.null(opposite.output)){
+  long.summ.idx.opp <- summ.index.opposite[2:nrow(summ.index.opposite),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.opp.idx <- long.summ.idx.opp %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.opp.idx <- which.max(powerdiffs.opp.idx$diff) + 1
+  }else{
+    label.row.opp.idx <- NULL
+  }
+  # index.rownames <- c("GAM (HT, bonf.)", "GAM (HT, one term)", "GAM (HT, F)",
+  #                     "GAM (VS)", "BKMR (Contrast)", "BKMR (Hier., 0.50)",
+  #                     "BKMR (Hier., 0.95)", "SSGAM (0.50)", "SSGAM (0.95)",
+  #                     "ENET", "PCR", "WQS (Pos.)", "WQS (Neg.)", "QGC", "TEV",
+  #                     "OLS"
+  # )
+  
+  # Create size row
+  ncol.index <- ncol(summ.index.lin)
+  size.index <- rbind(
+    summ.index.lin[1, ],
+    summ.index.nonlinear[1, ],
+    summ.index.interactive[1, ],
+    summ.index.sin[1,]) %>%
+    t() %>%
+    as.data.frame() %>%
+    rowMeans() %>%
+    round(5)
+  # colnames(size.index) <- c("Linear", "Nonlinear", "Interactive")
+  # rownames(size.index) <- index.rownames
+  size.index
+  
+  # Create power rows and combine with size row
+  power.index <- rbind(
+    summ.index.lin[label.row.lin.idx,],
+    summ.index.nonlinear[label.row.nonlin.idx,],
+    summ.index.interactive[label.row.int.idx,],
+    summ.index.sin[label.row.sin.idx,],
+    summ.index.opposite[label.row.opp.idx,] ,
+    size.index
+    
+  ) %>%
+    t() %>%
+    as.data.frame() %>%
+    round(5)
+  
+  # Combine and format output table
+  if(!is.null(opposite.output)){
+    colnames(power.index) <- c("Lin.", "N.L.", "Int.","Sine",  "Opp.", "None")
+    rownames(power.index)[1] <-"beta"# c("beta", index.rownames)
+    power.index <- cbind(rep(n.sim, 6), rep(p.sim, 6), rep(rho.sim, 6), t(power.index))
+  }else{
+    colnames(power.index) <- c("Lin.", "N.L.", "Int.", "Sine", "None")
+    rownames(power.index)[1] <- "beta"# c("beta", index.rownames)
+    power.index <- cbind(rep(n.sim, 5), rep(p.sim, 5), rep(rho.sim, 5), t(power.index))
+  }
+  colnames(power.index)[1:3] <- c("n", "p", "rho")
+  power.index
+  
+  #####################################
+  #             MSE Tables            #
+  #####################################
+  
+  use.cols.mse <- c("beta", "mse.GAM.add", "mse.BKMR",# "mse.SSGAM",
+                    "mse.ENET", "mse.OLS")
+  # summmarize data
+  summ.mse.lin <- summ_data(mse.linear[,use.cols.mse])
+  summ.mse.nonlinear <- summ_data(mse.nonlinear[,use.cols.mse])
+  summ.mse.interactive <- summ_data(mse.interactive[,use.cols.mse])
+  summ.mse.sin <- summ_data(mse.sin[,use.cols.mse])
+  summ.mse.opposite <- NULL
+  if(!is.null(opposite.output)){
+    summ.mse.opposite <- summ_data(mse.opposite[,use.cols.mse])
+  }
+  
+  # pick rows to make tables of
+  long.summ.mse.lin <- summ.mse.lin[2:nrow(summ.mse.lin),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.lin.mse <- long.summ.mse.lin %>%
+    group_by(beta1) %>%
+    summarize(sd = sd(Power))
+  
+  label.row.lin.mse <- which.max(powerdiffs.lin.mse$sd) + 1
+  
+  long.summ.mse.nonlin <- summ.mse.nonlinear[2:nrow(summ.mse.nonlinear),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.nonlin.mse <- long.summ.mse.nonlin %>%
+    group_by(beta1) %>%
+    summarize(sd = sd(Power))
+  
+  label.row.nonlin.mse <- which.max(powerdiffs.nonlin.mse$sd) + 1
+  
+  long.summ.mse.int <- summ.mse.interactive[2:nrow(summ.mse.interactive),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.int.mse <- long.summ.mse.int %>%
+    group_by(beta1) %>%
+    summarize(sd = sd(Power))
+  
+  label.row.int.mse <- which.max(powerdiffs.int.mse$sd) + 1
+  
+  long.summ.mse.sin <- summ.mse.sin[2:nrow(summ.mse.sin),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.sin.mse <- long.summ.mse.sin %>%
+    group_by(beta1) %>%
+    summarize(sd = sd(Power))
+  
+  label.row.sin.mse <- which.max(powerdiffs.sin.mse$sd) + 1
+  
+  
+  # 
+  if(!is.null(opposite.output)){
+    long.summ.mse.opp <- summ.mse.opposite[2:nrow(summ.mse.opposite),] %>%
+      pivot_longer(-beta1) %>%
+      rename(Method=name, Power=value) %>%
+      filter(!is.na(Power))
+    
+    powerdiffs.opp.mse <- long.summ.mse.opp %>%
+      group_by(beta1) %>%
+      summarize(sd = sd(Power))
+    
+    label.row.opp.mse <- which.max(powerdiffs.opp.mse$sd) + 1
+  }else{
+    label.row.opp.mse <- NULL
+  }
+  mse.rownames <- c("GAM", "BKMR",# "SSGAM",
+                    "ENET", "OLS" )
+  
+  # Create size row
+  ncol.mse <- ncol(summ.mse.lin)
+  null.mse <- rbind(
+    summ.mse.lin[1, ],
+    summ.mse.nonlinear[1, ],
+    summ.mse.interactive[1, ],
+    summ.mse.sin[1,]) %>%
+    t() %>%
+    as.data.frame() %>%
+    rowMeans() %>%
+    round(5)
+  # colnames(size.index) <- c("Linear", "Nonlinear", "Interactive")
+  # rownames(size.index) <- index.rownames
+  null.mse
+  
+  # Create power rows and combine with size row
+  mse.table <- rbind(
+    summ.mse.lin[label.row.lin.mse,],
+    summ.mse.nonlinear[label.row.nonlin.mse,],
+    summ.mse.interactive[label.row.int.mse,],
+    summ.mse.sin[label.row.sin.mse,],
+    summ.mse.opposite[label.row.opp.mse,] ,
+    null.mse
+    
+  ) %>%
+    t() %>%
+    as.data.frame() %>%
+    round(5)
+  
+  # Combine and format output table
+  if(!is.null(opposite.output)){
+    colnames(mse.table) <- c("Lin.", "N.L.", "Int.", "Sine", "Opp.", "None")
+    rownames(mse.table) <- c("beta", mse.rownames)
+    mse.table <- cbind(rep(n.sim, 6), rep(p.sim, 6), rep(rho.sim, 6), t(mse.table))
+  }else{
+    colnames(mse.table) <- c("Lin.", "N.L.", "Int.", "Sine", "None")
+    rownames(mse.table) <- c("beta", mse.rownames)
+    mse.table <- cbind(rep(n.sim, 5), rep(p.sim, 5), rep(rho.sim, 5), t(mse.table))
+  }
+  colnames(mse.table)[1:3] <- c("n", "p", "rho")
+  mse.table
+  
+  return(list(power.vs=power.vs, power.index=power.index, mse.table=mse.table))
+  
+}
+
+create_tables_dense <- function(dense.output.1, dense.output.2, p.sim.1, p.sim.2, rho.sim.1, rho.sim.2, n.sim){
+  
+  ################################################################################
+  #                        Extract data                                          #
+  ################################################################################
+  
+ 
+  idx.1 <- dense.output.1 %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  idx.2 <- dense.output.2 %>%
+    as.data.frame() %>%
+    select(beta, starts_with("idx."), -idx.ENET_alpha)
+  
+  
+  
+  colnames(idx.1) <- colnames(idx.2) <-
+    c("beta", "GAM (HT, bonf.)", "GAM (HT, one term)", "GAM (HT, F)", "GAM (VS)", "BKMR (Contrast)", 
+      "BKMR (Hier., 0.50)", "BKMR (Hier., 0.95)", "SSGAM (0.50)", "SSGAM (0.95)", 
+      "ENET", "PCR", "WQS (Pos.)", "WQS (Neg.)", "QGC", "TEV", "OLS")
+  
+  
+  use.cols <- c("beta", #"GAM (HT, bonf.)", 
+                "BKMR (Contrast)",  "BKMR (Hier., 0.95)", "OLS", "PCR",
+                "WQS (Pos.)", "QGC")
+  ################################################################################
+  #                                   Tables                                     #
+  ################################################################################
+  
+  #####################################
+  #   Index (whole-mixture) methods   #
+  #####################################
+  
+  # summmarize data
+  summ.index.1 <- summ_data(idx.1[,use.cols])
+  summ.index.2 <- summ_data(idx.2[,use.cols])
+  
+  
+  # pick rows to make tables of
+  long.summ.idx.1 <- summ.index.1[2:nrow(summ.index.1),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.idx.1 <- long.summ.idx.1 %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.idx.1 <- which.max(powerdiffs.idx.1$diff) + 1
+  
+  long.summ.idx.2 <- summ.index.2[2:nrow(summ.index.2),] %>%
+    pivot_longer(-beta1) %>%
+    rename(Method=name, Power=value) %>%
+    filter(!is.na(Power))
+  
+  powerdiffs.idx.2 <- long.summ.idx.2 %>%
+    group_by(beta1) %>%
+    summarize(diff = max(Power) - min(Power))
+  
+  label.row.idx.2 <- which.max(powerdiffs.idx.2$diff) + 1
+  
+  # index.rownames <- c("GAM (HT, bonf.)", "GAM (HT, one term)", "GAM (HT, F)",
+  #                     "GAM (VS)", "BKMR (Contrast)", "BKMR (Hier., 0.50)",
+  #                     "BKMR (Hier., 0.95)", "SSGAM (0.50)", "SSGAM (0.95)",
+  #                     "ENET", "PCR", "WQS (Pos.)", "WQS (Neg.)", "QGC", "TEV",
+  #                     "OLS"
+  # )
+  
+  # Create size row
+  ncol.index <- ncol(summ.index.1)
+  size.index.1 <- summ.index.1[1, ] %>%
+    t() %>%
+    as.data.frame() %>%
+    rowMeans() %>%
+    round(5)
+  # colnames(size.index) <- c("Linear", "Nonlinear", "Interactive")
+  # rownames(size.index) <- index.rownames
+  # size.index
+  size.index.2 <- summ.index.2[1, ] %>%
+    t() %>%
+    as.data.frame() %>%
+    rowMeans() %>%
+    round(5)
+  
+  # Create power rows and combine with size row
+  power.index <- rbind(
+    summ.index.1[label.row.idx.1,],
+    summ.index.2[label.row.idx.2,],
+    size.index.1,
+    size.index.2
+    
+  ) %>%
+    t() %>%
+    as.data.frame() %>%
+    round(5)
+  
+  # Combine and format output table
+  
+  colnames(power.index) <- c(p.sim.1, p.sim.2, p.sim.1, p.sim.2)
+  rownames(power.index)[1] <- "beta"# c("beta", index.rownames)
+  power.index <- cbind(rep(n.sim, 4), c(p.sim.1, p.sim.2, p.sim.1, p.sim.2), 
+                       c(rho.sim.1, rho.sim.2, rho.sim.1, rho.sim.2), t(power.index))
+  
+  colnames(power.index)[1:3] <- c("n", "p", "rho")
+  power.index
+  
+  
+  return(power.index)
+  
+}
+
+
+```
+
+
+
+```{r}
+######################################   Final tables          #################
+
+# Function to prepare final table by inserting monte carlo standard error estimate
+# into each cell
+
+make_final_table <- function(table){
+  
+  # initialize new table as matrix of string variables
+  J <- nrow(table)
+  K <- ncol(table)
+  
+  out <- matrix('-',nrow=J, ncol=K)
+  rownames(out) <- rownames(table)
+  colnames(out) <- colnames(table)
+  
+  # put in the scenario variables p, rho, beta
+  out[,1:3] <- out[,1:3] <- round(table[,1:3], 2)
+  
+  # put the monte carlo SE estimates into each cell of new table
+  for(j in 1:J){
+    
+    for(k in 4:K){
+      
+      # set number of MC iterations: 1200 for size cells, 400 for others
+      if(rownames(table)[j]=="None"){
+        M <- 1200
+      }else{
+        M <- 400
+      }
+      
+      # Extract power
+      pow <- round(table[j, k], 2)
+      # estimate SE
+      se <- round(sqrt(pow * (1-pow) / M), 2)
+      
+      out[j,k] <- paste(pow, " (", se, ")", sep="")
+    }
+    
+  }
+  return(out)
+}
+# vs.table.final <- make_final_table(vs.table)
+# index.table.final <- make_final_table(index.table)
+
+```
+
+
+Table formatting settings:
+```{r}
+options(knitr.table.vline = "")
+options(knitr.table.linesep = "")
+```
+
+Create tables for n=100, p=5:
+
+```{r}
+tables.n100.p5.r0 <- create_tables(out.rho0.linear.p5.n100, 
+                                   out.rho0.nonlinear.p5.n100, 
+                                   out.rho0.interactive.p5.n100, 
+                                   out.rho0.sin.p5.n100, 
+                                   n.sim=100, p.sim=5, rho.sim=0)  
+
+tables.n100.p5.r5 <- create_tables(out.rho5.linear.p5.n100, 
+                                   out.rho5.nonlinear.p5.n100, 
+                                   out.rho5.interactive.p5.n100, 
+                                   out.rho5.sin.p5.n100, 
+                                   n.sim=100, p.sim=5, rho.sim=0.5)  
+
+tables.n100.p5.r9 <- create_tables(out.rho9.linear.p5.n100, 
+                                   out.rho9.nonlinear.p5.n100, 
+                                   out.rho9.interactive.p5.n100, 
+                                   out.rho9.sin.p5.n100, 
+                                   n.sim=100, p.sim=5, rho.sim=0.9)
+```
+
+
+Create tables for n=100, p=10:
+
+```{r}
+tables.n100.p10.r0 <- create_tables(out.rho0.linear.p10.n100, 
+                                    out.rho0.nonlinear.p10.n100,
+                                    out.rho0.interactive.p10.n100, 
+                                    out.rho0.sin.p10.n100,  
+                                    n.sim=100, p.sim=10, rho.sim=0)   
+
+tables.n100.p10.r5 <- create_tables(out.rho5.linear.p10.n100, 
+                                    out.rho5.nonlinear.p10.n100, 
+                                    out.rho5.interactive.p10.n100,
+                                    out.rho5.sin.p10.n100, 
+                                    opposite.output=out.rho5.opposite.p10.n100, 
+                                    n.sim=100, p.sim=10, rho.sim=.5)  
+
+tables.n100.p10.r9 <- create_tables(out.rho9.linear.p10.n100, 
+                                    out.rho9.nonlinear.p10.n100, 
+                                    out.rho9.interactive.p10.n100, 
+                                    out.rho9.sin.p10.n100, 
+                                    n.sim=100, p.sim=10, rho.sim=0.9) 
+```
+
+Create tables for n=400:
+
+```{r}
+tables.n400.p5.r0 <- create_tables(out.rho0.linear.p5.n400, 
+                                   out.rho0.nonlinear.p5.n400,
+                                   out.rho0.interactive.p5.n400, 
+                                   out.rho0.sin.p5.n400,
+                                   n.sim=400, p.sim=5, rho.sim=0)  
+
+tables.n400.p5.r5 <- create_tables(out.rho5.linear.p5.n400, 
+                                   out.rho5.nonlinear.p5.n400, 
+                                   out.rho5.interactive.p5.n400, 
+                                   out.rho5.sin.p5.n400,
+                                   n.sim=400, p.sim=5, rho.sim=0.5)  
+
+```
+
+Create tables for dense scenarios:
+
+```{r}
+tables.dense <- create_tables_dense(out.rho5.dense.p10.n100, out.rho5.dense.p20.n100, 10, 20, .5, .5, 100)
+```
+
+```{r}
+# Not using all index methods from simulation: extract relevant columns
+idx.cols <- c("n", "p", "rho", "beta", "GAM (HT, bonf.)", "BKMR (Contrast)", "BKMR (Hier., 0.95)",  "PCR", "WQS (Pos.)", "QGC", "OLS")
+dense.cols <- c("n", "p", "rho", "beta", "BKMR (Contrast)", "BKMR (Hier., 0.95)",  "PCR", "WQS (Pos.)", "QGC", "OLS")
+```
+
+```{r}
+make_final_table <- function(table){
+  round(table, 2)
+}
+
+################################# n=100 #####################################
+
+#                                   p=5
+
+# rho=0
+kable(make_final_table(tables.n100.p5.r0$power.vs))
+kable(make_final_table(tables.n100.p5.r0$power.index[,idx.cols]))
+kable(round(tables.n100.p5.r0$mse.table, 2))
+
+# rho=.5
+kable(make_final_table(tables.n100.p5.r5$power.vs))
+kable(make_final_table(tables.n100.p5.r5$power.index[,idx.cols]))
+kable(round(tables.n100.p5.r5$mse.table, 2))
+
+# rho=.9
+kable(make_final_table(tables.n100.p5.r9$power.vs))
+kable(make_final_table(tables.n100.p5.r9$power.index[,idx.cols]))
+kable(round(tables.n100.p5.r9$mse.table, 2))
+
+#                                      p=10
+
+# rho=0
+kable(make_final_table(tables.n100.p10.r0$power.vs))
+kable(make_final_table(tables.n100.p10.r0$power.index[,idx.cols]))
+kable(round(tables.n100.p10.r0$mse.table, 2))
+
+# rho=.5
+kable(make_final_table(tables.n100.p10.r5$power.vs))
+kable(make_final_table(tables.n100.p10.r5$power.index[,idx.cols]))
+kable(round(tables.n100.p10.r5$mse.table, 2))
+
+
+# rho=.9
+kable(make_final_table(tables.n100.p10.r9$power.vs))
+kable(make_final_table(tables.n100.p10.r9$power.index[,idx.cols]))
+kable(round(tables.n100.p10.r9$mse.table, 2))
+
+############################### n=400 #########################################
+
+#                                   p=5
+
+# rho=0
+kable(make_final_table(tables.n400.p5.r0$power.vs))
+kable(make_final_table(tables.n400.p5.r0$power.index[,idx.cols]))
+kable(round(tables.n400.p5.r0$mse.table, 2))
+
+# rho=.5
+kable(make_final_table(tables.n400.p5.r5$power.vs))
+kable(make_final_table(tables.n400.p5.r5$power.index[,idx.cols]))
+kable(round(tables.n400.p5.r5$mse.table, 2))
+
+# Dense
+kable(make_final_table(tables.dense[,dense.cols]))
+
+```
