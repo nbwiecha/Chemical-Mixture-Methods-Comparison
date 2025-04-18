@@ -51,11 +51,11 @@ for(i in 1:length(ps)){
 pips.1 <- pips[,1]
 hist(pips.1)
 mean(pips.1)
-load("~/GitHub/PFAS-methods/outputs/BKMR_null_hier_sim.Rdata")
+load("~/GitHub/Chemical-Mixture-Methods-Comparison/outputs/BKMR_null_hier_sim.Rdata")
 pips <- cbind(pips)
 boxplot(pips, main="Null distributions of BKMR group PIPs for p=2, ..., 10", ylim=c(0,1))
 
-png("GitHub/PFAS-methods/outputs//bkmr_null_distn.png", width = 500, height = 400)
+png("GitHub/Chemical-Mixture-Methods-Comparison/outputs//bkmr_null_distn.png", width = 500, height = 400)
 boxplot(pips, main="Null distributions of BKMR group PIPs for p=2, ..., 10", ylim=c(0,1))
 dev.off()
 
@@ -101,37 +101,4 @@ for(i in 1:length(ps)){
 }
 boxplot(pips.10)
 
-# data.frame(fit$control.params)
-library(mgcv)
-set.seed(1234)
-n <- 100
-p <- 5
-rho <- 0
-Sigma <- matrix(rho, nrow=p, ncol=p) + diag(1-rho, nrow=p, ncol=p)
-L.Sigma <- chol(Sigma)
-X <-  matrix(rnorm(n*p), ncol=p) %*% (L.Sigma)
-# X <- matrix(runif(n*p), ncol=p)
-y <- rnorm(n)
-fit <- kmbayes(y, X, groups=rep(1, p), varsel=TRUE, verbose=FALSE, iter=iters)
-TracePlot(fit, par="sigsq.eps")
-ExtractPIPs(fit)
-pred.resp.univar <- PredictorResponseUnivar(fit = fit)
-ggplot(pred.resp.univar, aes(z, est, ymin = est - 1.96*se, ymax = est + 1.96*se)) + 
-  geom_smooth(stat = "identity") + 
-  facet_wrap(~ variable) +
-  ylab("h(z)")
-
-gam.dat <- cbind(y, X) %>%
-  as.data.frame()
-colnames(gam.dat) <- c('y', 'x1', 'x2', 'x3','x4', 'x5')
-
-fit.gam <- gam(y ~ s(x1) + s(x2) + s(x3) + s(x4) + s(x5), data=gam.dat)
-summary(fit.gam)
-plot(fit.gam)
-
-fit.gam.reml <- gam(y ~ s(x1) + s(x2) + s(x3) + s(x4) + s(x5), data=gam.dat, method="REML")
-summary(fit.gam.reml)
-plot(fit.gam.reml)
-
-
-save.image("~/GitHub/PFAS-methods/outputs/BKMR_null_hier_sim.Rdata")
+save.image("~/GitHub/Chemical-Mixture-Methods-Comparison/outputs/BKMR_null_hier_sim.Rdata")
